@@ -1,6 +1,4 @@
-package general;
-
-import net.dv8tion.jda.api.hooks.ListenerAdapter;
+package general.internals;
 
 public class CheckPermissions {
     /**

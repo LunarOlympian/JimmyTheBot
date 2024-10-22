@@ -1,4 +1,4 @@
-package globalchat;
+package mirrorchats.mirrors;
 
 public class ReactionMirror {
 }

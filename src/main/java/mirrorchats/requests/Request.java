@@ -1,14 +1,15 @@
-package globalchat.requests;
+package mirrorchats.requests;
 
 import java.util.ArrayList;
 
-public class Message {
+public class Request {
 
     private String username;
     private String userID;
     private String serverName;
-    private String text;
-    private String flags;
+    private String serverID;
+    private String text; // Action requests are formatted like /!delete (message id here)!/
+    private Flags flags; // Modifications to the message such as a local message, a special format, non-reactable, etc.
 
     private ArrayList<String> servers = new ArrayList<>();
 
@@ -21,21 +22,34 @@ public class Message {
      * @param serverName The name of the servers this was sent from.
      * @param rawText The text of the message. Sanitized and flags handled after it's sent.
      */
-    public Message(String username, String userID, String serverName,
+    public Request(String username, String userID, String serverName,
                    String rawText) {
         this.username = username;
         this.userID = userID;
         this.serverName = serverName;
-
+        this.text = sanitizeText(rawText);
     }
 
     /**
      * Sanitized the text so nothing breaks and pings don't work.
      * @param rawText Raw text from the request.
      */
-    private void sanitizeText(String rawText) {
+    private String sanitizeText(String rawText) {
         String modifiedText = rawText;
         modifiedText = modifiedText.replaceAll("@", "");
-        // Gets all the flags
+
+
+        // Handles all the flags
+        String flagString = rawText.toLowerCase();
+        ArrayList<String> flags = new ArrayList<>();
+
+        if(flagString.contains("?local?")) flags.add("Local");
+        if(flagString.contains("?noreactions?")) flags.add("No reactions");
+
+        modifiedText = modifiedText.replaceAll("\\?\\S{3,20}\\?", "");
+
+        this.flags = new Flags(flags);
+
+        return modifiedText;
     }
 }
