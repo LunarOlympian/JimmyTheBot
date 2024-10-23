@@ -1,4 +1,4 @@
-package mirrorchats.requests;
+package commands.standard.mirrorchats.requests;
 
 import java.util.ArrayList;
 

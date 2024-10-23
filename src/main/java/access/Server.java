@@ -1,4 +1,4 @@
-package servers;
+package access;
 
 public class Server {
     // Server Jimmy is on

@@ -1,0 +1,12 @@
+Not sure where else to put this so a text file will have to do.
+There are 3 types of commands standard, privileged, and debug.
+
+Standard - Designed for anyone to be able to use them, so long as they have the correct permissions.
+Privileged - Only users added to the correct file (/Internals/PrivilegedUsers.txt) may run them.
+Debug - The code must be in debug mode for them to be run by anyone.
+
+When running a command of a certain type you need to change the prefix to tell Jimmy what to search for.
+Prefixes:
+!j - Standard prefix, all most users need to know about.
+!j-p - Privileged command.
+!j-d - Debug command. Will only run when debug mode is on.

@@ -1,6 +1,5 @@
-import internals.JimmyFiles;
 import jimmy.Runner;
-import mirrorchats.MirrorChatRunner;
+import commands.standard.mirrorchats.MirrorChatRunner;
 import net.dv8tion.jda.api.JDABuilder;
 import net.dv8tion.jda.api.requests.GatewayIntent;
 

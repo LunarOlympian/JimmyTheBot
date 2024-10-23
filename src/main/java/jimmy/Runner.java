@@ -1,21 +1,20 @@
 package jimmy;
 
-import general.internals.Documentation;
-import general.internals.Help;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import org.jetbrains.annotations.NotNull;
 
-import java.io.File;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
-import static internals.JimmyFiles.jimmyPath;
+import static commands.privileged.IDSpoof.privilegedCommands_idSpoof;
+import static commands.debug.Echo.debugCommands_echo;
+import static commands.standard.internals.Documentation.internalCommands_documentation;
+import static commands.standard.internals.Help.internalCommands_help;
+import static internals.RateLimits.checkRateLimited;
+import static internals.tools.FileRead.readFile;
 
 public class Runner extends ListenerAdapter {
 
@@ -27,18 +26,24 @@ public class Runner extends ListenerAdapter {
      * or has exclusive usage (the only servers able to use Jimmy) (1)
      * @return Map with the info for each server
      */
-    private static HashMap<String, Integer> buildRestrictions() throws IOException {
+    private static Map<String, Integer> buildRestrictions() {
         /*
         0 - Cannot send to
         1 - Exclusively send to
         */
         Map<String, Integer> returnMe = new HashMap<>();
 
-        for(String server : Files.readString(
-                new File(jimmyPath + "/Internals/ServerRestrictions.txt").toPath()).split("\n")
-        ) {
-
+        boolean hasExclusiveSend = false;
+        for (String server : readFile("Internals/ServerRestrictions.txt").split("\n"))
+        {
+            if(server.startsWith("!")) {
+                returnMe.put(server.substring(1), 1); // ! denotes exclusive
+                hasExclusiveSend = true;
+            }
+            else returnMe.put(server, 0);
         }
+        hasExclusive = hasExclusiveSend;
+        return returnMe;
     }
 
     /*
@@ -47,22 +52,33 @@ public class Runner extends ListenerAdapter {
     */
     @Override
     public void onMessageReceived(@NotNull MessageReceivedEvent e) {
-
-
-
         Message message = e.getMessage();
         String messageContent = e.getMessage().getContentRaw();
 
-        // Assesses if the user is rate limited.
+        // Assess if server is restricted, or if there are exclusive(s) it's not one
+        if(hasExclusive && serverRestrictions.getOrDefault(e.getGuild().getId(), 0) == 0) return;
+        else if(serverRestrictions.getOrDefault(e.getGuild().getId(), -1) == 0) return;
+
+        // Handles ID spoof
+        String userID = privilegedCommands_idSpoof(e.getMessage());
+
+
+        // Checks if the user is rate limited.
+        if(checkRateLimited(userID)) return;
+
 
         // Jimmy command!!!
         if(messageContent.toLowerCase().startsWith("!j ")) {
             // This just lets other classes do the hard work. Message sending is handled elsewhere.
-            if(messageContent.split(" ")[1].equalsIgnoreCase("help")) Help.help(message);
+            String[] messageSplit = messageContent.split(" ");
 
-            if(messageContent.split(" ")[1].equalsIgnoreCase("documentation")) Documentation.Documentation(message);
+            if(messageSplit[1].equalsIgnoreCase("help")) internalCommands_help(message);
 
-            if(messageContent.split(" ")[1].equalsIgnoreCase("mc")) Help.help(message);
+            if(messageSplit[1].equalsIgnoreCase("documentation")) internalCommands_documentation(message);
+
+            // if(messageSplit[1].equalsIgnoreCase("mc")) internalCommands_help(message);
+
+            if(messageSplit[1].equalsIgnoreCase("echo")) debugCommands_echo(message);
 
         }
     }

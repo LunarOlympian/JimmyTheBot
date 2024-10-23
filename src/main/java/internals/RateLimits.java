@@ -1,5 +1,8 @@
 package internals;
 
+import org.javatuples.Pair;
+import org.javatuples.Tuple;
+
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Map;
@@ -7,8 +10,14 @@ import java.util.Queue;
 
 public class RateLimits {
 
-    private static Map<String, Long> rateLimitStarts = new HashMap<>(); // Keeps track of each rate limit start time.
-    private static Queue<String> rateLimitedUsers = new LinkedList<>(); // Keeps track of the oldest user added and loops until all rate limited users are cleared.
+    /** Keeps track of each rate limit start time.
+     * UserID (String), (Millisecond start time, Breaks of rate limit) (Pair<\Long, Integer>)
+     * Breaks of rate limit is how many times the user has broken the rate limit.
+     * 0 breaks isn't rate limited, but has a cooldown of 5 seconds until their instance is deleted.
+     * 1+ breaks sets the rate limit to 5 seconds
+     */
+    private static final Map<String, Pair<Long, Integer>> rateLimitStarts = new HashMap<>();
+    private static final Queue<String> rateLimitedUsers = new LinkedList<>(); // Keeps track of the oldest user added and loops until all rate limited users are cleared.
 
     /**
      * If the user isn't rate limited it returns false and sets them to be rate limited.
@@ -16,12 +25,17 @@ public class RateLimits {
      */
     public static boolean checkRateLimited(String userID) {
         clearQueue();
-        if(!rateLimitStarts.containsKey(userID)) rateLimitUser(userID);
-        return rateLimitStarts.containsKey(userID);
+        boolean rateLimited = rateLimitStarts.getOrDefault(userID, new Pair<>(0L, 0)).getValue1() > 0;
+        rateLimitUser(userID);
+        return rateLimited;
     }
 
     private static void rateLimitUser(String userID) {
-        rateLimitStarts.put(userID, System.currentTimeMillis());
+        rateLimitStarts.put(userID, new Pair<>(System.currentTimeMillis(),
+                // Below gets the rate limit info or a generic one then updates the rate limit.
+                rateLimitStarts.getOrDefault(userID, new Pair<>(0L, -1)).getValue1() + 1)
+        );
+        rateLimitedUsers.remove(userID); // Just in case they broke their rate limit :)
         rateLimitedUsers.add(userID);
     }
 
@@ -34,7 +48,7 @@ public class RateLimits {
         for(int i = 0; i < 5; i++) {
             if(rateLimitedUsers.isEmpty()) break; // Breaks if no users are rate limited!
             String check = rateLimitedUsers.peek();
-            if(System.currentTimeMillis() - rateLimitStarts.get(check) >= 5000) {
+            if(System.currentTimeMillis() - rateLimitStarts.get(check).getValue0() >= 5000) {
                 rateLimitedUsers.remove();
                 rateLimitStarts.remove(check);
             }
